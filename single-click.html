@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Blog Post - Brand</title>
+    <meta name="description" content="Senior Android Developer in Berlin | Passionate about Kotlin, Coroutines, Clean Architecture
+
+This is my blog about my programming adventures!">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="270x270" href="assets/img/mstile-150x150.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/img/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/img/android-chrome-512x512.png">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic">
+    <link rel="stylesheet" href="assets/fonts/font-awesome.min.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-light navbar-expand-lg fixed-top" id="mainNav">
+        <div class="container"><a class="navbar-brand" href="index.html">Thanos</a><button data-toggle="collapse" data-target="#navbarResponsive" class="navbar-toggler" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><i class="fa fa-bars"></i></button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="nav navbar-nav ml-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About ME</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <header class="masthead" style="background: url(&quot;assets/img/1_dDMtKkvLAye7tutJc1NSmw.jpeg&quot;) center / cover no-repeat;">
+        <div class="overlay"></div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-lg-8 mx-auto">
+                    <div class="post-heading">
+                        <h1>Ensure single click on Android (ButterKnife did it right 👌)<br></h1><span class="meta">Posted by Thanos&nbsp;on July 10, 2020</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <article>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-lg-8 mx-auto">
+                    <p>Recently, while I was investigating a weird issue of double network calls, I discovered that the root cause was not some bad network state or my HTTP client, but something much more simple and often overlooked. User double-tapping on a button too quickly…</p>
+                    <p>A few years ago (like a lifetime in Android development)&nbsp;<a href="https://github.com/JakeWharton/butterknife">ButterKnife</a>&nbsp;library was extremely popular for Java-based apps to bind views and avoid all the findViewById calls. It also used simple annotations like&nbsp;@OnClick&nbsp;to annotate methods and avoid setting up click listeners, I believe these are pretty known stuff. Now we use Kotlin synthetics (❤️) or&nbsp;<a href="https://developer.android.com/topic/libraries/view-binding">View Binding</a>&nbsp;, so ButterKnife got deprecated.</p>
+                    <p>But as I mentioned ButterKnife had among others, this&nbsp;@OnClick&nbsp;annotation and it was hiding a small perk if you check the generated code:&nbsp;<a href="https://github.com/JakeWharton/butterknife/blob/94729fcb85deae93d89617f44e40749163838f39/butterknife-runtime/src/main/java/butterknife/internal/DebouncingOnClickListener.java">DebouncingClickListener</a><br></p>
+                    <p><em>A View.OnClickListener click listener that debounces multiple clicks posted in the same frame. A click on one button disables&nbsp;</em><strong><em>all buttons</em></strong><em>&nbsp;for that frame.</em><br></p>
+                    <p>What it did, was when you set up a click listener using the annotation, it automatically prevented for you accidental quick double clicks which may lead to weird behavior like the double network calls I was facing 😏 , or double pop up of dialogs, etc. but for&nbsp;<strong>all buttons</strong>&nbsp;that used this class as click handler! ButterKnife was indeed beautiful!<br></p>
+                    <p>Of course, we can’t go back, but my idea was to copy and then extend the behavior with the help of Kotlin and extension methods.<br></p>
+                    <p>First I created a DebouncingOnClickListener that was an exact copy of the original, translated to Kotlin. Then I added an extra parameter intervalMillis that can prevent clicks for a specified time period and not only for that frame.<br></p><script src="https://gist.github.com/tpakis/d733fdaa2982be7d806e2807ec4eb21c.js"></script>
+                    <p>And then an extension method to add this listener to my views:<br></p><script src="https://gist.github.com/tpakis/508d1a7c15d495cf3345930123d49418.js"></script>
+                    <p>I used a default value of 0 for the interval (which is the same as ButterKnife with disabling for one frame) so passing a value for the interval when you set the click listener at the view is totally optional. And the best is, that it will prevent clicks for all views that have this click handler!<br></p>
+                    <p>And that’s it! No more double clicks! ✌️</p>
+                    <p style="text-align: center;">Photo by&nbsp;<a href="https://unsplash.com/@johnschno?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">John Schnobrich</a>&nbsp;on&nbsp;<a href="https://unsplash.com/?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></p>
+                </div>
+            </div>
+        </div>
+    </article>
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-lg-8 mx-auto">
+                    <ul class="list-inline text-center">
+                        <li class="list-inline-item"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-twitter fa-stack-1x fa-inverse"></i></span></li>
+                        <li class="list-inline-item"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-github fa-stack-1x fa-inverse"></i></span></li>
+                    </ul>
+                    <p class="text-muted copyright">Copyright&nbsp;©&nbsp;Thanos 2020</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/script.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Blog Post - Brand</title>
+    <meta name="description" content="Senior Android Developer in Berlin | Passionate about Kotlin, Coroutines, Clean Architecture
+
+This is my blog about my programming adventures!">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="270x270" href="assets/img/mstile-150x150.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/img/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/img/android-chrome-512x512.png">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic">
+    <link rel="stylesheet" href="assets/fonts/font-awesome.min.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-light navbar-expand-lg fixed-top" id="mainNav">
+        <div class="container"><a class="navbar-brand" href="index.html">Thanos</a><button data-toggle="collapse" data-target="#navbarResponsive" class="navbar-toggler" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><i class="fa fa-bars"></i></button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="nav navbar-nav ml-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About ME</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <header class="masthead" style="background: url(&quot;lorenzo-herrera-p0j-mE6mGo4-unsplash (1).jpg&quot;) center / cover no-repeat;">
+        <div class="overlay"></div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-lg-8 mx-auto">
+                    <div class="post-heading">
+                        <h1>View Binding or back to findViewById to replace Kotlin Synthetics?</h1>
+                        <h2 class="subheading">Should I introduce a new library before Jetpack Compose?</h2><span class="meta">Posted by&nbsp;<a href="#">Thanos</a>&nbsp;on January 4, 2021</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <article>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-lg-8 mx-auto">
+                    <p>As of November ’20 Kotlin synthetic properties are officially deprecated. For anyone not familiar with them, they were part o<em>f the kotlin-android-extensions</em> plugin and allowed you to access views in the layout XML, just as if they were properties of the fragment/activity/view using them. They were very straightforward and despite some <a href="https://proandroiddev.com/migrating-the-deprecated-kotlin-android-extensions-compiler-plugin-to-viewbinding-d234c691dec7">drawbacks</a>, I believe they were the most elegant way we ever had on Android to access the XML layout views, far better than the old default findViewById.</p>
+                    <p>The reasons of the deprecation of the plugin are explained <a href="https://android-developers.googleblog.com/2020/11/the-future-of-kotlin-android-extensions.html">here</a>, although another valid reason is that it’s not compatible with the new Kotlin backend. That means that you cannot (easily) use them together in a project with <a href="https://developer.android.com/jetpack/compose">Jetpack Compose</a>, which we all know is coming soon, as the new way to write UI for Android.</p>
+                    <p>So what can we do now for our views? The “official” recommendation is that we use the <a href="https://developer.android.com/topic/libraries/view-binding/">View Binding</a> Jetpack library. But since we know that Jetpack Compose is coming, a valid question arises:&nbsp;<br></p>
+                    <p><strong>Does it make sense to dedicate the time and effort to introduce to a big project a new library that is already known to be considered "old-way" (if not also deprecated) a few months down the road?</strong></p>
+                    <p>An alternative is to use Kotlin’s powers to reuse the old, reliable, default findViewById, hiding it behind the scenes with an elegant syntax, using extension methods and delegated properties. There is a very nice <a href="https://quiro.dev/posts/improving-findViewById-kotlin/">article here</a> (definitely worth reading) which gives us two extension methods for activities and custom views, we can also create another one for RecyclerView ViewHolders:<br></p><script src="https://gist.github.com/tpakis/1d260b9cf08c0ce9869a63a0e70071a1.js"></script>
+                    <p>And its use is super straightforward:</p><script src="https://gist.github.com/tpakis/88d0486270cde5622b9f71d9e01d142d.js"></script>
+                    <p>It seems like problem solved, we are defining our views as properties at the top of the class like we used to do back in the days, even with butterknife, and we are not using the ugly findViewById calls after setContentView.</p>
+                    <h2 class="section-heading">Fragments</h2>
+                    <p>That’s nice, but what about fragments? In theory we could have an extension for them too, like the ones above. Well not so fast. Fragments unlike activities can have multiple view hierarchies created and destroyed by the system while keeping the same fragment class instance (navigating back and forth with navigation component or manually with adding fragments to backstack can easily expose this behavior).&nbsp;</p>
+                    <p>This will cause memory leaks and/or bugs if we take the same approach as with activities and have a global property of a view lazily loaded. This property will hold a reference to the “old” view, keeping it after <em>onDestroyView </em>is called (memory leak) and won’t replace it with a new view after onCreateView is called again (bug) since it’s a val already lazily loaded. So in the above example, if it was used in a fragment instead of the activity, the button click handler would work only the first time the fragment view is loaded and will leak view reference. Not ideal at all.&nbsp;</p>
+                    <p>Of course this is a common source for bugs in fragments you can easily make the <a href="https://dev.to/s_anastasov/fragments-viewbinding-and-memory-leaks-3kn1">same mistake with View Binding </a>or with a <a href="https://stackoverflow.com/questions/35520946/leak-canary-recyclerview-leaking-madapter">RecyclerView adapter reference</a>.&nbsp;</p>
+                    <p>So how do we proceed? Well the best solution would be, to have this lazily loaded value reset to null when onDestroyView is called. And while experimenting for an implementation, I came across <a href="https://halcyonmobile.com/blog/mobile-app-development/android-app-development/patching-fragment-memory-leaks-2019/">this blog post</a> about fragments memory leaks mentioning the <a href="https://github.com/android/architecture-components-samples/blob/master/GithubBrowserSample/app/src/main/java/com/android/example/github/util/AutoClearedValue.kt">AutoClearValue</a> helper from architecture components samples. Modifying it for views and combining it with an extension method from fragments we get this:&nbsp;</p><script src="https://gist.github.com/tpakis/9a8d5d0c6a4183ae197575c96f8aeb97.js"></script>
+                    <p>This can be used exactly the same way as with activities, without leaking any view reference!&nbsp;&nbsp;</p><script src="https://gist.github.com/tpakis/cc261358e35e3b1ef9be3b2663edc7a0.js"></script>
+                    <h2 class="section-heading">Final Version</h2>
+                    <p>And this means we have a complete solution to replace Kotlin synthetics in any use case, without using “<em>new”</em> libraries, but with reusing the old findViewById in a more “Kotlin power” style:</p><script src="https://gist.github.com/tpakis/bfed90ab7779fc4b9cfac2ec28c652e1.js"></script>
+                    <p>I created a small sample app, that demonstrates this solution and the memory leaks caused by not clearing views references, using Leak Canary. Run the app and select baseline for non-leaky version and variation 1 for the leaks. Final step 4 in both versions contains a button to trigger a heap dump and check for memory leaks.</p><a href="https://github.com/tpakis/viewbindings-extensions">
+                        <p><a href="https://github.com/tpakis/viewbindings-extensions"><strong>tpakis/viewbindings-extensions</strong></a></p>
+                    </a>
+                    <p></p>
+                    <p>I hope this post will be helpful for your app’s migration, and I really look forward to the new Jetpack Compose era coming to Android!<br></p>
+                    <p style="text-align: center;">Photo by <a href="https://unsplash.com/@lorenzoherrera?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Lorenzo Herrera</a> on <a href="https://unsplash.com/s/photos/retro?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></p>
+                </div>
+            </div>
+        </div>
+    </article>
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-lg-8 mx-auto">
+                    <ul class="list-inline text-center">
+                        <li class="list-inline-item"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-twitter fa-stack-1x fa-inverse"></i></span></li>
+                        <li class="list-inline-item"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-github fa-stack-1x fa-inverse"></i></span></li>
+                    </ul>
+                    <p class="text-muted copyright">Copyright&nbsp;©&nbsp;Thanos 2020</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/script.min.js"></script>
+</body>
+
+</html>
